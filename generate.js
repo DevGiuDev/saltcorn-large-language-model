@@ -207,6 +207,7 @@ const toolResponse = async (
   //console.log("chat", JSON.stringify(chat, null, 2));
   switch (opts.backend || backend) {
     case "OpenAI":
+    case "OpenAI-compatible API":
       {
         let tool_call_chat, tool_call;
         if (!((opts.tool_call_id && opts.tool_name) || opts.tool_call)) {

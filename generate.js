@@ -887,6 +887,7 @@ const getCompletionAISDK = async (
     endpoint,
     ephemeralCacheControl,
     respond_object,
+    reasoning_effort,
     ...rest
   },
 ) => {
@@ -911,6 +912,11 @@ const getCompletionAISDK = async (
         (acfg) => acfg.name === rest.alt_config,
       ) || config
     : config;
+  const use_provider = use_config.alt_provider || config.provider;
+  const reasoningEffort =
+    typeof reasoning_effort !== "undefined"
+      ? reasoning_effort
+      : use_config.reasoning_effort;
 
   const modifyChat = (chat) => {
     const f = (c) => {
@@ -947,6 +953,26 @@ const getCompletionAISDK = async (
   };
   if (appendToChat && chat && prompt) {
     chat.push({ role: "user", content: prompt });
+  }
+
+  if (reasoningEffort) {
+    if (use_provider === "OpenAI" || use_provider === "Z.ai") {
+      body.providerOptions = {
+        ...body.providerOptions,
+        openai: {
+          ...body.providerOptions?.openai,
+          reasoningEffort,
+        },
+      };
+    } else if (use_provider === "Anthropic") {
+      body.providerOptions = {
+        ...body.providerOptions,
+        anthropic: {
+          ...body.providerOptions?.anthropic,
+          effort: reasoningEffort,
+        },
+      };
+    }
   }
 
   if (

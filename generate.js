@@ -619,6 +619,7 @@ const getCompletion = async (config, opts) => {
           bearer: opts?.api_key || opts?.bearer || config.api_key,
           model: opts?.model || config.model,
           responses_api: config.responses_api,
+          temperature: config.temperature,
         },
         opts,
       );
@@ -633,6 +634,7 @@ const getCompletion = async (config, opts) => {
             config.bearer,
           apiKey: opts?.api_key || config.api_key,
           model: opts?.model || config.model,
+          temperature: config.temperature,
         },
         opts,
       );
@@ -643,6 +645,7 @@ const getCompletion = async (config, opts) => {
             ? path.join(config.ollama_host, "v1/chat/completions")
             : "http://localhost:11434/v1/chat/completions",
           model: opts?.model || config.model,
+          temperature: config.temperature,
         },
         opts,
       );
@@ -961,13 +964,19 @@ const getCompletionAISDK = async (
 
   if (NO_TEMP_MODELS.includes(use_model_name)) {
     delete body.temperature;
-  } else if (rest.temperature || temperature) {
-    const str_or_num = rest.temperature || temperature;
-    body.temperature = +str_or_num;
   } else if (rest.temperature === null) {
     delete body.temperature;
-  } else if (typeof temperature === "undefined") {
-    if (!NO_TEMP_MODELS.includes(use_model_name)) body.temperature = 0.7;
+  } else if (
+    typeof rest.temperature !== "undefined" ||
+    typeof temperature !== "undefined"
+  ) {
+    const str_or_num =
+      typeof rest.temperature !== "undefined"
+        ? rest.temperature
+        : temperature;
+    body.temperature = +str_or_num;
+  } else {
+    body.temperature = 0.7;
   }
   if (body.tools) {
     const prevTools = [...body.tools];
@@ -1120,13 +1129,21 @@ const getCompletionOpenAICompatible = async (
     model: use_model,
     ...rest,
   };
-  if (rest.temperature || temperature) {
-    const str_or_num = rest.temperature || temperature;
-    body.temperature = +str_or_num;
+  if (NO_TEMP_MODELS.includes(use_model)) {
+    delete body.temperature;
   } else if (rest.temperature === null) {
     delete body.temperature;
-  } else if (typeof temperature === "undefined") {
-    if (!NO_TEMP_MODELS.includes(use_model)) body.temperature = 0.7;
+  } else if (
+    typeof rest.temperature !== "undefined" ||
+    typeof temperature !== "undefined"
+  ) {
+    const str_or_num =
+      typeof rest.temperature !== "undefined"
+        ? rest.temperature
+        : temperature;
+    body.temperature = +str_or_num;
+  } else {
+    body.temperature = 0.7;
   }
   if (rest.streamCallback && global.fetch) {
     body.stream = true;
@@ -1631,8 +1648,8 @@ const getCompletionGoogleVertex = async (config, opts, oauth2Client) => {
       role: "system",
       parts: [{ text: opts.systemPrompt || "You are a helpful assistant." }],
     },
-    generationCon0fig: {
-      temperature: config.temperature || 0.7,
+    generationConfig: {
+      temperature: config.temperature ?? 0.7,
     },
   });
   const chatParams = {
